@@ -1,0 +1,318 @@
+[
+  {
+    "id": "roti",
+    "name": "Roti",
+    "aliases": ["chapati", "phulka", "fulka"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "roti", "rotis", "chapati", "chapatis"], "grams": 40 }
+    ],
+    "macrosPer100g": { "calories": 297, "protein": 8.7, "carbs": 46.4, "fat": 7.4 }
+  },
+  {
+    "id": "dal_tadka",
+    "name": "Dal Tadka",
+    "aliases": ["dal", "daal", "yellow dal", "tadka dal"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl", "small bowl"], "grams": 180 },
+      { "name": "cup", "aliases": ["cup"], "grams": 240 }
+    ],
+    "macrosPer100g": { "calories": 104, "protein": 6.0, "carbs": 14.5, "fat": 2.8 }
+  },
+  {
+    "id": "rice",
+    "name": "Cooked Rice",
+    "aliases": ["rice", "white rice", "chawal"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 150 },
+      { "name": "cup", "aliases": ["cup"], "grams": 160 }
+    ],
+    "macrosPer100g": { "calories": 130, "protein": 2.7, "carbs": 28.0, "fat": 0.3 }
+  },
+  {
+    "id": "paneer_bhurji",
+    "name": "Paneer Bhurji",
+    "aliases": ["paneer bhurji", "paneer scramble"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 160 }
+    ],
+    "macrosPer100g": { "calories": 220, "protein": 13.0, "carbs": 6.5, "fat": 16.0 }
+  },
+  {
+    "id": "rajma",
+    "name": "Rajma",
+    "aliases": ["rajma", "kidney bean curry"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 },
+      { "name": "cup", "aliases": ["cup"], "grams": 240 }
+    ],
+    "macrosPer100g": { "calories": 121, "protein": 6.9, "carbs": 18.0, "fat": 2.4 }
+  },
+  {
+    "id": "chole",
+    "name": "Chole",
+    "aliases": ["chole", "chana masala", "chickpea curry"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 }
+    ],
+    "macrosPer100g": { "calories": 164, "protein": 7.0, "carbs": 22.0, "fat": 5.0 }
+  },
+  {
+    "id": "idli",
+    "name": "Idli",
+    "aliases": ["idli", "idly"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "idli", "idlis"], "grams": 45 }
+    ],
+    "macrosPer100g": { "calories": 128, "protein": 4.0, "carbs": 26.0, "fat": 0.7 }
+  },
+  {
+    "id": "dosa",
+    "name": "Dosa",
+    "aliases": ["dosa", "plain dosa"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "dosa", "dosas"], "grams": 100 }
+    ],
+    "macrosPer100g": { "calories": 168, "protein": 3.9, "carbs": 29.0, "fat": 3.7 }
+  },
+  {
+    "id": "poha",
+    "name": "Poha",
+    "aliases": ["poha", "flattened rice"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 150 },
+      { "name": "plate", "aliases": ["plate"], "grams": 250 }
+    ],
+    "macrosPer100g": { "calories": 158, "protein": 3.0, "carbs": 25.0, "fat": 5.0 }
+  },
+  {
+    "id": "upma",
+    "name": "Upma",
+    "aliases": ["upma", "rava upma"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 160 }
+    ],
+    "macrosPer100g": { "calories": 171, "protein": 4.0, "carbs": 27.0, "fat": 5.0 }
+  },
+  {
+    "id": "chai",
+    "name": "Chai",
+    "aliases": ["chai", "tea", "milk tea"],
+    "defaultUnit": "cup",
+    "units": [
+      { "name": "cup", "aliases": ["cup", "cups"], "grams": 120 },
+      { "name": "glass", "aliases": ["glass"], "grams": 180 }
+    ],
+    "macrosPer100g": { "calories": 58, "protein": 1.5, "carbs": 8.5, "fat": 2.0 }
+  },
+  {
+    "id": "curd",
+    "name": "Curd",
+    "aliases": ["curd", "dahi", "yogurt"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 120 },
+      { "name": "cup", "aliases": ["cup"], "grams": 240 }
+    ],
+    "macrosPer100g": { "calories": 61, "protein": 3.5, "carbs": 4.7, "fat": 3.3 }
+  },
+  {
+    "id": "banana",
+    "name": "Banana",
+    "aliases": ["banana", "kela"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "banana", "bananas"], "grams": 118 }
+    ],
+    "macrosPer100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 }
+  },
+  {
+    "id": "apple",
+    "name": "Apple",
+    "aliases": ["apple"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "apple", "apples"], "grams": 150 }
+    ],
+    "macrosPer100g": { "calories": 52, "protein": 0.3, "carbs": 14.0, "fat": 0.2 }
+  },
+  {
+    "id": "boiled_egg",
+    "name": "Boiled Egg",
+    "aliases": ["egg", "boiled egg", "anda"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "egg", "eggs"], "grams": 50 }
+    ],
+    "macrosPer100g": { "calories": 155, "protein": 13.0, "carbs": 1.1, "fat": 11.0 }
+  },
+  {
+    "id": "omelette",
+    "name": "Omelette",
+    "aliases": ["omelette", "omelet"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "omelette", "omelettes"], "grams": 100 }
+    ],
+    "macrosPer100g": { "calories": 154, "protein": 11.0, "carbs": 1.6, "fat": 12.0 }
+  },
+  {
+    "id": "chicken_curry",
+    "name": "Chicken Curry",
+    "aliases": ["chicken curry", "chicken"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 },
+      { "name": "piece", "aliases": ["piece", "pieces"], "grams": 80 }
+    ],
+    "macrosPer100g": { "calories": 185, "protein": 18.0, "carbs": 5.0, "fat": 10.0 }
+  },
+  {
+    "id": "fish_curry",
+    "name": "Fish Curry",
+    "aliases": ["fish curry", "fish"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 },
+      { "name": "piece", "aliases": ["piece", "pieces"], "grams": 90 }
+    ],
+    "macrosPer100g": { "calories": 142, "protein": 16.0, "carbs": 4.0, "fat": 7.0 }
+  },
+  {
+    "id": "sambar",
+    "name": "Sambar",
+    "aliases": ["sambar", "sambhar"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 },
+      { "name": "cup", "aliases": ["cup"], "grams": 240 }
+    ],
+    "macrosPer100g": { "calories": 73, "protein": 3.5, "carbs": 11.0, "fat": 2.0 }
+  },
+  {
+    "id": "paratha",
+    "name": "Paratha",
+    "aliases": ["paratha", "plain paratha"],
+    "defaultUnit": "piece",
+    "units": [
+      { "name": "piece", "aliases": ["piece", "pieces", "paratha", "parathas"], "grams": 80 }
+    ],
+    "macrosPer100g": { "calories": 326, "protein": 7.0, "carbs": 45.0, "fat": 13.0 }
+  },
+  {
+    "id": "aloo_sabzi",
+    "name": "Aloo Sabzi",
+    "aliases": ["aloo sabzi", "potato sabzi", "aloo"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 150 }
+    ],
+    "macrosPer100g": { "calories": 130, "protein": 2.2, "carbs": 20.0, "fat": 5.0 }
+  },
+  {
+    "id": "mixed_veg",
+    "name": "Mixed Veg",
+    "aliases": ["mixed veg", "mixed vegetable", "vegetable sabzi", "sabzi"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 150 }
+    ],
+    "macrosPer100g": { "calories": 95, "protein": 3.0, "carbs": 12.0, "fat": 4.0 }
+  },
+  {
+    "id": "khichdi",
+    "name": "Khichdi",
+    "aliases": ["khichdi", "khichri"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 },
+      { "name": "plate", "aliases": ["plate"], "grams": 300 }
+    ],
+    "macrosPer100g": { "calories": 107, "protein": 3.8, "carbs": 18.0, "fat": 2.4 }
+  },
+  {
+    "id": "sprouts",
+    "name": "Sprouts",
+    "aliases": ["sprouts", "moong sprouts"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 100 }
+    ],
+    "macrosPer100g": { "calories": 45, "protein": 4.0, "carbs": 7.0, "fat": 0.6 }
+  },
+  {
+    "id": "salad",
+    "name": "Salad",
+    "aliases": ["salad", "kachumber"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 120 },
+      { "name": "plate", "aliases": ["plate"], "grams": 200 }
+    ],
+    "macrosPer100g": { "calories": 28, "protein": 1.2, "carbs": 5.0, "fat": 0.3 }
+  },
+  {
+    "id": "lassi",
+    "name": "Lassi",
+    "aliases": ["lassi", "sweet lassi"],
+    "defaultUnit": "glass",
+    "units": [
+      { "name": "glass", "aliases": ["glass", "glasses"], "grams": 250 }
+    ],
+    "macrosPer100g": { "calories": 88, "protein": 3.0, "carbs": 13.0, "fat": 2.5 }
+  },
+  {
+    "id": "milk",
+    "name": "Milk",
+    "aliases": ["milk", "doodh"],
+    "defaultUnit": "glass",
+    "units": [
+      { "name": "glass", "aliases": ["glass", "glasses"], "grams": 240 },
+      { "name": "cup", "aliases": ["cup"], "grams": 200 }
+    ],
+    "macrosPer100g": { "calories": 61, "protein": 3.2, "carbs": 4.8, "fat": 3.3 }
+  },
+  {
+    "id": "oats",
+    "name": "Oats",
+    "aliases": ["oats", "oatmeal"],
+    "defaultUnit": "katori",
+    "units": [
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 160 },
+      { "name": "cup", "aliases": ["cup"], "grams": 240 }
+    ],
+    "macrosPer100g": { "calories": 71, "protein": 2.5, "carbs": 12.0, "fat": 1.5 }
+  },
+  {
+    "id": "biryani",
+    "name": "Biryani",
+    "aliases": ["biryani", "veg biryani", "chicken biryani"],
+    "defaultUnit": "plate",
+    "units": [
+      { "name": "plate", "aliases": ["plate"], "grams": 300 },
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 180 }
+    ],
+    "macrosPer100g": { "calories": 170, "protein": 6.0, "carbs": 23.0, "fat": 6.0 }
+  },
+  {
+    "id": "pulao",
+    "name": "Pulao",
+    "aliases": ["pulao", "veg pulao"],
+    "defaultUnit": "plate",
+    "units": [
+      { "name": "plate", "aliases": ["plate"], "grams": 280 },
+      { "name": "katori", "aliases": ["katori", "bowl"], "grams": 160 }
+    ],
+    "macrosPer100g": { "calories": 151, "protein": 3.5, "carbs": 25.0, "fat": 4.2 }
+  }
+]
+

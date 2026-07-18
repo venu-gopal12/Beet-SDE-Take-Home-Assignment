@@ -1,0 +1,21 @@
+import express from "express";
+
+export const createFoodsRouter = ({ foodResolver }) => {
+  const router = express.Router();
+
+  router.get("/", (req, res) => {
+    // Expose the closed food set so the agent can clarify supported dishes.
+    res.json({ foods: foodResolver.listFoods() });
+  });
+
+  router.get("/search", (req, res, next) => {
+    try {
+      const food = foodResolver.resolveFood(req.query.q);
+      res.json({ food });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+};
