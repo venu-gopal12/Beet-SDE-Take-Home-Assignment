@@ -79,4 +79,100 @@ describe("meal API", () => {
 
     expect(response.body.error.code).toBe("dish_not_found");
   });
+
+  it("rejects invalid units and invalid quantities", async () => {
+    const invalidUnit = await request(app)
+      .post("/api/meals")
+      .send({ items: [{ dish: "roti", quantity: 3, unit: "glass" }] })
+      .expect(422);
+    expect(invalidUnit.body.error.code).toBe("unit_not_allowed");
+
+    const invalidQuantity = await request(app)
+      .post("/api/meals")
+      .send({ items: [{ dish: "roti", quantity: 0 }] })
+      .expect(422);
+    expect(invalidQuantity.body.error.code).toBe("quantity_invalid");
+
+    const tooLarge = await request(app)
+      .post("/api/meals")
+      .send({ items: [{ dish: "roti", quantity: 500 }] })
+      .expect(422);
+    expect(tooLarge.body.error.code).toBe("quantity_too_large");
+  });
+
+  it("rejects missing required meal items", async () => {
+    const response = await request(app).post("/api/meals").send({ mealType: "lunch" }).expect(422);
+    expect(response.body.error.code).toBe("items_required");
+  });
+
+  it("returns 404 for editing or deleting a missing entry", async () => {
+    await request(app)
+      .patch("/api/meals/missing-meal/items/missing-item")
+      .send({ quantity: 2 })
+      .expect(404);
+
+    await request(app)
+      .delete("/api/meals/missing-meal/items/missing-item")
+      .expect(404);
+  });
+
+  it("deduplicates identical voice retry creates in a short window", async () => {
+    await createLunch().expect(201);
+    await createLunch().expect(201);
+
+    const listed = await request(app).get("/api/meals").expect(200);
+    expect(listed.body.meals).toHaveLength(1);
+  });
+
+  it("asks callers to clarify ambiguous matching entries", async () => {
+    await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "lunch",
+        rawUtterance: "one roti for lunch",
+        loggedAt: "2026-07-19T10:00:00.000Z",
+        items: [{ dish: "roti", quantity: 1 }]
+      })
+      .expect(201);
+
+    await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "dinner",
+        rawUtterance: "two rotis for dinner",
+        loggedAt: "2026-07-19T12:00:00.000Z",
+        items: [{ dish: "roti", quantity: 2 }]
+      })
+      .expect(201);
+
+    const ambiguous = await request(app).get("/api/meals/find?dish=roti").expect(409);
+    expect(ambiguous.body.error.code).toBe("meal_match_ambiguous");
+    expect(ambiguous.body.error.details.candidates).toHaveLength(2);
+
+    await request(app).get("/api/meals/find?dish=roti&allowAmbiguousLatest=true").expect(200);
+  });
+
+  it("maps malformed Mongo ids to a clear 400 response", async () => {
+    const castErrorRepository = {
+      getById: async () => {
+        const error = new Error("Cast to ObjectId failed");
+        error.name = "CastError";
+        throw error;
+      },
+      list: async () => [],
+      create: async () => null,
+      save: async () => null
+    };
+    const castErrorApp = createApp({
+      repository: castErrorRepository,
+      foodResolver: new FoodResolver(path.resolve(process.cwd(), "../data/foods.json"))
+    });
+
+    const response = await request(castErrorApp)
+      .patch("/api/meals/not-a-mongo-id/items/not-an-item-id")
+      .send({ quantity: 2 })
+      .expect(400);
+
+    expect(response.body.error.code).toBe("malformed_id");
+  });
 });

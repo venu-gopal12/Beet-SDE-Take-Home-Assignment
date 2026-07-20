@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ArrowRight, RefreshCw, Utensils } from "lucide-react";
+import { ArrowRight, Loader2, Mic, MicOff, PhoneOff, RefreshCw, Utensils } from "lucide-react";
+import { Room, RoomEvent, Track } from "livekit-client";
 import "./styles.css";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -17,6 +18,118 @@ const Macro = ({ label, value, unit = "g" }) => (
     <strong>{value}{unit}</strong>
   </div>
 );
+
+const VoiceSession = ({ onMealsChanged }) => {
+  const [room, setRoom] = useState(null);
+  const [voiceStatus, setVoiceStatus] = useState("idle");
+  const [voiceError, setVoiceError] = useState("");
+  const [agentSpeaking, setAgentSpeaking] = useState(false);
+
+  const endSession = async () => {
+    if (room) {
+      room.disconnect();
+    }
+    setRoom(null);
+    setAgentSpeaking(false);
+    setVoiceStatus("idle");
+  };
+
+  const startSession = async () => {
+    setVoiceError("");
+    setVoiceStatus("connecting");
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/livekit/session`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ userId: "demo-user" })
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error?.message || "Could not start a voice session");
+      }
+
+      const session = await response.json();
+      const nextRoom = new Room({ adaptiveStream: true, dynacast: true });
+
+      nextRoom
+        .on(RoomEvent.ParticipantConnected, (participant) => {
+          if (!participant.isLocal) {
+            setVoiceStatus("connected");
+          }
+        })
+        .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          if (track.kind !== Track.Kind.Audio || participant.isLocal) return;
+          setVoiceStatus("connected");
+          document.body.appendChild(track.attach());
+        })
+        .on(RoomEvent.TrackUnsubscribed, (track) => {
+          track.detach().forEach((element) => element.remove());
+        })
+        .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+          setAgentSpeaking(speakers.some((speaker) => !speaker.isLocal));
+        })
+        .on(RoomEvent.Disconnected, () => {
+          setRoom(null);
+          setAgentSpeaking(false);
+          setVoiceStatus("idle");
+          onMealsChanged();
+        });
+
+      await nextRoom.connect(session.url, session.token);
+      await nextRoom.localParticipant.setMicrophoneEnabled(true);
+      setRoom(nextRoom);
+      setVoiceStatus(nextRoom.remoteParticipants.size > 0 ? "connected" : "warming");
+    } catch (err) {
+      setVoiceError(err.message);
+      setVoiceStatus("idle");
+    }
+  };
+
+  useEffect(() => () => {
+    if (room) room.disconnect();
+  }, [room]);
+
+  const isConnecting = voiceStatus === "connecting";
+  const isWarming = voiceStatus === "warming";
+  const isConnected = voiceStatus === "connected";
+  const isActive = isWarming || isConnected;
+  const statusText = isConnecting
+    ? "Creating a secure LiveKit room..."
+    : isWarming
+      ? "Assistant is starting. Please wait for the greeting before speaking."
+      : isConnected
+        ? (agentSpeaking ? "Assistant is speaking" : "Listening in this browser")
+        : "Start a LiveKit session and speak your meal changes.";
+
+  return (
+    <section className={`voice-panel ${isConnected ? "connected" : ""} ${isWarming ? "warming" : ""}`}>
+      <div className="voice-copy">
+        <span className="voice-icon">
+          {isConnecting || isWarming ? <Loader2 className="spin" size={20} /> : isConnected ? <Mic size={20} /> : <MicOff size={20} />}
+        </span>
+        <div>
+          <h2>Voice Assistant</h2>
+          <p>{statusText}</p>
+        </div>
+      </div>
+
+      {isActive ? (
+        <button className="danger-button" onClick={endSession} type="button">
+          <PhoneOff size={18} />
+          End
+        </button>
+      ) : (
+        <button className="voice-button" onClick={startSession} disabled={isConnecting} type="button">
+          {isConnecting ? <Loader2 className="spin" size={18} /> : <Mic size={18} />}
+          {isConnecting ? "Starting" : "Start voice"}
+        </button>
+      )}
+
+      {voiceError ? <p className="voice-error">{voiceError}</p> : null}
+    </section>
+  );
+};
 
 const MealCard = ({ meal }) => (
   <article className="meal-card">
@@ -123,6 +236,8 @@ const App = () => {
           <ArrowRight size={20} />
         </button>
       </section>
+
+      <VoiceSession onMealsChanged={loadMeals} />
 
       <section className="status">
         <span>{loading ? "Loading meal logs..." : `${meals.length} active meal ${meals.length === 1 ? "entry" : "entries"}`}</span>

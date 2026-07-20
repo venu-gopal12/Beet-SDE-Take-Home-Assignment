@@ -19,7 +19,8 @@ export const createMealsRouter = ({ mealService }) => {
         userId: req.query.userId,
         dish: req.query.dish,
         mealType: req.query.mealType,
-        timeOfDay: req.query.timeOfDay
+        timeOfDay: req.query.timeOfDay,
+        allowAmbiguousLatest: req.query.allowAmbiguousLatest === "true"
       });
       res.json({ match });
     } catch (error) {

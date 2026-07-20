@@ -3,6 +3,7 @@ import path from "node:path";
 import { ApiError } from "../utils/ApiError.js";
 
 const round = (value) => Math.round(value * 10) / 10;
+const maxReasonableQuantity = 50;
 
 // Normalize voice-derived strings before comparing them to foods.json.
 const normalize = (value = "") =>
@@ -114,6 +115,9 @@ export class FoodResolver {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) {
       throw new ApiError(422, "quantity_invalid", "Quantity must be a positive number.");
+    }
+    if (numericQuantity > maxReasonableQuantity) {
+      throw new ApiError(422, "quantity_too_large", `Quantity must be ${maxReasonableQuantity} or less.`);
     }
 
     const food = this.resolveFood(dish);

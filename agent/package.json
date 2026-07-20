@@ -1,0 +1,16 @@
+{
+  "name": "beet-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node src/index.js dev",
+    "start": "node src/index.js start",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@livekit/agents": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.24.1"
+  }
+}

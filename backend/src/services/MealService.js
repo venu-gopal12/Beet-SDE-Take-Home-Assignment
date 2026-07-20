@@ -18,6 +18,17 @@ const asDate = (value) => {
 };
 
 const normalizeObjectId = (value) => String(value);
+const duplicateWindowMs = 10_000;
+
+const itemFingerprint = (item) =>
+  `${item.foodId}:${item.quantity}:${item.unit}:${item.grams}`;
+
+const mealFingerprint = ({ mealType, rawUtterance = "", items }) =>
+  JSON.stringify({
+    mealType: normalizeMealType(mealType),
+    rawUtterance: String(rawUtterance).trim().toLowerCase(),
+    items: items.map(itemFingerprint).sort()
+  });
 
 // Backend-side time filters make commands like "this morning" deterministic.
 const inTimeOfDay = (meal, timeOfDay) => {
@@ -52,11 +63,26 @@ export class MealService {
 
     // The backend, not the agent or UI, resolves foods and computes macros.
     const resolvedItems = items.map((item) => this.foodResolver.resolveItem(item));
+    const normalizedMealType = normalizeMealType(mealType);
+    const loggedAtDate = asDate(loggedAt);
+    const rawText = rawUtterance || "";
+    const fingerprint = mealFingerprint({
+      mealType: normalizedMealType,
+      rawUtterance: rawText,
+      items: resolvedItems
+    });
+    const recentMeals = rawText.trim() ? await this.repository.list(this.userId(userId)) : [];
+    const duplicate = recentMeals.find((meal) => {
+      const ageMs = Math.abs(loggedAtDate.getTime() - new Date(meal.loggedAt).getTime());
+      return ageMs <= duplicateWindowMs && mealFingerprint(meal) === fingerprint;
+    });
+    if (duplicate) return duplicate;
+
     return this.repository.create({
       userId: this.userId(userId),
-      mealType: normalizeMealType(mealType),
-      loggedAt: asDate(loggedAt),
-      rawUtterance: rawUtterance || "",
+      mealType: normalizedMealType,
+      loggedAt: loggedAtDate,
+      rawUtterance: rawText,
       items: resolvedItems,
       totals: sumMacros(resolvedItems),
       deletedAt: null
@@ -111,7 +137,7 @@ export class MealService {
     return this.repository.save(meal);
   }
 
-  async findRecent({ userId, dish, mealType, timeOfDay }) {
+  async findRecent({ userId, dish, mealType, timeOfDay, allowAmbiguousLatest = true }) {
     const food = dish ? this.foodResolver.resolveFood(dish) : null;
     const meals = await this.repository.list(this.userId(userId));
     const matches = [];
@@ -129,6 +155,21 @@ export class MealService {
 
     if (!matches.length) {
       throw new ApiError(404, "meal_match_not_found", "No matching meal entry was found.");
+    }
+    if (!allowAmbiguousLatest && matches.length > 1) {
+      throw new ApiError(409, "meal_match_ambiguous", "Multiple matching meal entries were found.", {
+        candidates: matches.slice(0, 3).map(({ meal, item }) => ({
+          mealId: meal._id,
+          itemId: item._id,
+          mealType: meal.mealType,
+          loggedAt: meal.loggedAt,
+          item: {
+            foodName: item.foodName,
+            quantity: item.quantity,
+            unit: item.unit
+          }
+        }))
+      });
     }
 
     const match = matches[0];

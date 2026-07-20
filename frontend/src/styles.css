@@ -8,6 +8,8 @@
   --muted: #555555;
   --border: #E8E8E8;
   --white: #FFFFFF;
+  --danger: #B42318;
+  --danger-bg: #FFF1F0;
   color: var(--text);
   background: var(--white);
   font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -35,10 +37,11 @@ main {
 .nav,
 .hero,
 .summary,
-.meal-card,
-.empty,
-.status,
-.error {
+  .meal-card,
+  .empty,
+  .status,
+  .voice-panel,
+  .error {
   border: 1px solid var(--border);
   background: var(--white);
   border-radius: 28px;
@@ -154,6 +157,116 @@ h2 {
   font-weight: 700;
   cursor: pointer;
   transition: background 160ms ease, transform 160ms ease;
+}
+
+.voice-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 18px 22px;
+  border-radius: 24px;
+}
+
+.voice-panel.connected {
+  border-color: #B9E3B4;
+  background: linear-gradient(135deg, var(--white), rgba(221, 244, 217, 0.72));
+}
+
+.voice-panel.warming {
+  border-color: #F5C7EA;
+  background: linear-gradient(135deg, var(--white), rgba(249, 234, 247, 0.72));
+}
+
+.voice-copy {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.voice-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--primary-green);
+}
+
+.voice-copy h2 {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.voice-copy p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.voice-button,
+.danger-button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 0 22px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+  white-space: nowrap;
+}
+
+.voice-button {
+  border: 0;
+  background: var(--primary-green);
+  color: var(--white);
+}
+
+.voice-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.danger-button {
+  border: 1px solid #FDA29B;
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.voice-button:hover:not(:disabled),
+.danger-button:hover {
+  transform: translateY(-1px);
+}
+
+.voice-button:hover:not(:disabled) {
+  background: #15660d;
+}
+
+.danger-button:hover {
+  background: #FFE3E0;
+}
+
+.voice-error {
+  grid-column: 1 / -1;
+  color: #8a125f;
+  font-size: 14px;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .primary-button {
@@ -377,5 +490,14 @@ h2 {
     align-items: flex-start;
     flex-direction: column;
     border-radius: 24px;
+  }
+
+  .voice-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-button,
+  .danger-button {
+    width: 100%;
   }
 }

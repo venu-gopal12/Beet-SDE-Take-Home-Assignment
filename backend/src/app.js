@@ -8,6 +8,7 @@ import { MongoMealRepository } from "./repositories/MongoMealRepository.js";
 import { FoodResolver } from "./services/FoodResolver.js";
 import { MealService } from "./services/MealService.js";
 import { createFoodsRouter } from "./routes/foods.js";
+import { createLiveKitRouter } from "./routes/livekit.js";
 import { createMealsRouter } from "./routes/meals.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,7 @@ export const createApp = ({
   });
 
   app.use("/api/foods", createFoodsRouter({ foodResolver }));
+  app.use("/api/livekit", createLiveKitRouter());
   app.use("/api/meals", createMealsRouter({ mealService }));
   app.use(errorHandler);
 

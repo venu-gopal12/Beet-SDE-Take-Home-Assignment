@@ -27,5 +27,10 @@ describe("FoodResolver", () => {
   it("rejects unsupported units for a valid dish", () => {
     expect(() => resolver.resolveItem({ dish: "roti", quantity: 1, unit: "glass" })).toThrow(/cannot be logged/);
   });
-});
 
+  it("rejects zero, negative, and absurd quantities", () => {
+    expect(() => resolver.resolveItem({ dish: "roti", quantity: 0 })).toThrow(/positive/);
+    expect(() => resolver.resolveItem({ dish: "roti", quantity: -2 })).toThrow(/positive/);
+    expect(() => resolver.resolveItem({ dish: "roti", quantity: 500 })).toThrow(/50 or less/);
+  });
+});
