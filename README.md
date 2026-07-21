@@ -88,7 +88,7 @@ GitHub Actions workflows are included in `.github/workflows`.
 
 - Frontend deploy: builds `frontend/` and deploys to Vercel when Vercel secrets are present.
 - Backend deploy: triggers a hosting-provider deploy hook, such as Render/Railway/Fly, when `BACKEND_DEPLOY_HOOK_URL` is present.
-- Agent deploy: deploys `agent/` to LiveKit Cloud using the official `livekit/deploy-action@v2`.
+- Agent deploy: deploys `agent/` to LiveKit Cloud using the official `livekit/deploy-action@v2.12.1`.
 
 Required GitHub secrets for deployment:
 
