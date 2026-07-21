@@ -43,6 +43,7 @@ const inTimeOfDay = (meal, timeOfDay) => {
 
 const parseClockTime = (clockTime) => {
   if (!clockTime) return null;
+  // Used after ambiguity prompts such as "the 1:45 one".
   const match = String(clockTime).trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
   if (!match) {
     throw new ApiError(422, "clock_time_invalid", "clockTime must look like 1:45 PM or 13:45.");
@@ -71,6 +72,8 @@ const parseClockTime = (clockTime) => {
 const atClockTime = (meal, parsedClockTime) => {
   if (!parsedClockTime) return true;
   const loggedAt = new Date(meal.loggedAt);
+  // Exact minute matching is intentional because the candidate prompt shows
+  // minute-level timestamps to the user.
   return loggedAt.getHours() === parsedClockTime.hour
     && loggedAt.getMinutes() === parsedClockTime.minute;
 };
@@ -193,6 +196,8 @@ export class MealService {
       throw new ApiError(404, "meal_match_not_found", "No matching meal entry was found.");
     }
     if (!allowAmbiguousLatest && matches.length > 1) {
+      // Send back human-distinguishable candidates instead of guessing which
+      // same-day item the user meant.
       throw new ApiError(409, "meal_match_ambiguous", "Multiple matching meal entries were found.", {
         candidates: matches.slice(0, 3).map(({ meal, item }) => ({
           mealId: meal._id,

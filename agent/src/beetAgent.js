@@ -1,6 +1,8 @@
 import { voice } from "@livekit/agents";
 import { beetTools } from "./tools.js";
 
+// The prompt defines product policy; the tools below enforce the backend
+// boundary so the model cannot invent nutrition or mutate meals directly.
 export const instructions = `
 You are Beet's meal logging assistant.
 

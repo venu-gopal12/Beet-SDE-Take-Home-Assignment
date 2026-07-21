@@ -1,5 +1,7 @@
 import { Meal } from "../models/Meal.js";
 
+// Production repository. It hides Mongoose details behind the same interface
+// used by the in-memory test repository.
 export class MongoMealRepository {
   async create(payload) {
     const meal = await Meal.create(payload);
@@ -19,6 +21,8 @@ export class MongoMealRepository {
   }
 
   async save(meal) {
+    // runValidators keeps edits honest even when they come through partial item
+    // updates rather than direct model creation.
     const updated = await Meal.findOneAndUpdate(
       { _id: meal._id, userId: meal.userId },
       meal,

@@ -53,6 +53,7 @@ export const createMealsRouter = ({ mealService }) => {
 
   router.patch("/:mealId/items/:itemId", async (req, res, next) => {
     try {
+      // Tools resolve ambiguity first, then mutate a concrete meal item id.
       const meal = await mealService.updateItem({
         mealId: req.params.mealId,
         itemId: req.params.itemId,
@@ -75,6 +76,7 @@ export const createMealsRouter = ({ mealService }) => {
 
   router.delete("/:mealId/items/:itemId", async (req, res, next) => {
     try {
+      // Item delete may soft-delete the whole meal when the last item is removed.
       const meal = await mealService.deleteItem({
         mealId: req.params.mealId,
         itemId: req.params.itemId,

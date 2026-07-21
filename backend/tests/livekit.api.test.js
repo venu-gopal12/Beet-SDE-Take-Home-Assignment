@@ -4,6 +4,8 @@ import { createApp } from "../src/app.js";
 import { FoodResolver } from "../src/services/FoodResolver.js";
 import { InMemoryMealRepository } from "../src/repositories/InMemoryMealRepository.js";
 
+// The browser should get a clear setup error instead of a low-level LiveKit
+// failure when deployment secrets are missing.
 describe("LiveKit browser session API", () => {
   it("returns a clear error when LiveKit credentials are not configured", async () => {
     const app = createApp({

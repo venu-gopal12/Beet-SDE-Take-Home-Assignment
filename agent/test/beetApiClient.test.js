@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it, mock } from "node:test";
 import { BeetApiClient, BeetApiError, cleanOptional, formatApiError, summarizeMeal } from "../src/beetApiClient.js";
 
+// These tests mock fetch so agent tool behavior can be verified without a live
+// backend or LiveKit session.
 describe("BeetApiClient", () => {
   it("logs meals through the backend", async () => {
     const fetchMock = mock.method(globalThis, "fetch", async () => new Response(JSON.stringify({

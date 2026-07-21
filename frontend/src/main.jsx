@@ -4,9 +4,13 @@ import { ArrowRight, Loader2, Mic, MicOff, PhoneOff, RefreshCw, Utensils } from 
 import { Room, RoomEvent, Track } from "livekit-client";
 import "./styles.css";
 
+// The frontend is intentionally thin: it asks the backend for LiveKit tokens and
+// meal data, while all food validation stays server-side.
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const demoUserId = import.meta.env.VITE_DEMO_USER_ID || "venugopal";
 
+// Use Indian locale formatting because the demo foods and meal vocabulary are
+// tuned around an Indian household context.
 const formatTime = (value) =>
   new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium",
@@ -27,6 +31,7 @@ const VoiceSession = ({ onMealsChanged }) => {
   const [agentSpeaking, setAgentSpeaking] = useState(false);
 
   const endSession = async () => {
+    // Disconnecting the room also tears down remote audio tracks.
     if (room) {
       room.disconnect();
     }
@@ -51,10 +56,12 @@ const VoiceSession = ({ onMealsChanged }) => {
       }
 
       const session = await response.json();
+      // A new LiveKit room is created for each browser voice session.
       const nextRoom = new Room({ adaptiveStream: true, dynacast: true });
 
       nextRoom
         .on(RoomEvent.ParticipantConnected, (participant) => {
+          // The remote participant is the dispatched meal agent.
           if (!participant.isLocal) {
             setVoiceStatus("connected");
           }
@@ -62,6 +69,7 @@ const VoiceSession = ({ onMealsChanged }) => {
         .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
           if (track.kind !== Track.Kind.Audio || participant.isLocal) return;
           setVoiceStatus("connected");
+          // Attach agent audio directly; LiveKit manages the underlying media.
           document.body.appendChild(track.attach());
         })
         .on(RoomEvent.TrackUnsubscribed, (track) => {
@@ -74,6 +82,8 @@ const VoiceSession = ({ onMealsChanged }) => {
           setRoom(null);
           setAgentSpeaking(false);
           setVoiceStatus("idle");
+          // Refresh after a call in case the final tool result arrived just
+          // before the room closed.
           onMealsChanged();
         });
 
@@ -133,6 +143,7 @@ const VoiceSession = ({ onMealsChanged }) => {
 };
 
 const MealCard = ({ meal }) => (
+  // Each card represents one logging event, not a merged daily meal bucket.
   <article className="meal-card">
     <header>
       <div>

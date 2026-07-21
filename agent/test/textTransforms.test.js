@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { stripGemmaThoughtChannels } from "../src/textTransforms.js";
 
+// Helpers model the streaming chunks that LiveKit TTS transforms receive.
 const streamText = (chunks) =>
   new ReadableStream({
     start(controller) {
@@ -21,6 +22,7 @@ const readText = async (stream) => {
 };
 
 describe("stripGemmaThoughtChannels", () => {
+  // Gemma-style thought tags should never be spoken by the assistant.
   it("removes complete thought channels from TTS text", async () => {
     const output = await readText(stripGemmaThoughtChannels(streamText([
       "Sure. <|channel>thought I should not say this <channel|>Logged your meal.",

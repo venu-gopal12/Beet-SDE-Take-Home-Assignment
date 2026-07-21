@@ -1,5 +1,6 @@
 const missingValues = new Set(["", "none", "null", "undefined", "unknown", "n/a"]);
 
+// Tool-facing error wrapper that preserves backend error codes for prompts.
 export class BeetApiError extends Error {
   constructor(message, code = "api_error", details = {}) {
     super(message);
@@ -10,6 +11,8 @@ export class BeetApiError extends Error {
 }
 
 export const cleanOptional = (value) => {
+  // The LLM may send placeholder strings for optional filters; strip them so
+  // they do not accidentally narrow backend searches.
   if (value === null || value === undefined) return null;
   if (typeof value === "string") {
     const stripped = value.trim();
@@ -25,6 +28,7 @@ export class BeetApiClient {
   }
 
   async request(method, path, { json, params, signal } = {}) {
+    // Centralize fetch handling so every tool gets consistent error formatting.
     const url = new URL(path, `${this.baseUrl}/`);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
@@ -125,6 +129,7 @@ export class BeetApiClient {
   }
 
   async deleteLatestMeal(options = {}) {
+    // Undo works at the meal-event level, matching the event-log storage model.
     const listed = await this.request("GET", "/api/meals", {
       ...options,
       params: { userId: this.userId },
@@ -168,6 +173,8 @@ export const formatApiError = (error) => {
   }
   const candidates = error.details?.candidates || [];
   if (error.code === "meal_match_ambiguous" && candidates.length) {
+    // Include timestamps because meal type alone cannot distinguish two lunch
+    // roti entries on the same day.
     const labels = candidates
       .map((candidate) => `${candidate.item.quantity} ${candidate.item.unit} ${candidate.item.foodName} from ${candidate.mealType}${formatLoggedAt(candidate.loggedAt)}`)
       .join("; ");

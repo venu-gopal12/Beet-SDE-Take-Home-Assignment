@@ -12,6 +12,7 @@ const macroSchema = new mongoose.Schema(
 
 const mealItemSchema = new mongoose.Schema(
   {
+    // Items store resolved food snapshots; reads do not depend on foods.json.
     foodId: { type: String, required: true },
     foodName: { type: String, required: true },
     quantity: { type: Number, required: true },
@@ -24,6 +25,7 @@ const mealItemSchema = new mongoose.Schema(
 
 const mealSchema = new mongoose.Schema(
   {
+    // Demo user id keeps the take-home focused on meal flow, not auth.
     userId: { type: String, required: true, index: true },
     mealType: {
       type: String,

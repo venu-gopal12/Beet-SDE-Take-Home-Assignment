@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { shouldAskForMealType } from "../src/mealType.js";
 
+// Meal-type prompting is tested outside LiveKit so the policy is cheap to
+// verify without a voice room.
 describe("shouldAskForMealType", () => {
   it("asks when a new log has no explicit meal type", () => {
     assert.equal(shouldAskForMealType({

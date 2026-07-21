@@ -8,6 +8,8 @@ import { FoodResolver } from "../src/services/FoodResolver.js";
 let app;
 
 beforeEach(() => {
+  // Each test gets a fresh in-memory app so meal history never leaks between
+  // scenarios.
   app = createApp({
     repository: new InMemoryMealRepository(),
     foodResolver: new FoodResolver(path.resolve(process.cwd(), "../data/foods.json"))
@@ -15,6 +17,7 @@ beforeEach(() => {
 });
 
 const createLunch = () =>
+  // Shared fixture for the core "log lunch with multiple items" happy path.
   request(app)
     .post("/api/meals")
     .send({

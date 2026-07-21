@@ -1,19 +1,292 @@
 # Beet Voice Meal Logging
 
-A small end-to-end slice of Beet's voice meal logging flow: a React page starts a browser microphone session, a LiveKit voice agent logs, edits, and deletes meals through an Express API, and the page shows the persisted meal history.
+An end-to-end voice meal logging assignment built with the MERN stack and LiveKit Agents. A reviewer can open the React frontend, start a browser voice session, speak meal changes, and see persisted meal logs update from the backend.
+
+The assistant logs, edits, removes, and undoes meal entries by calling backend tools. Nutrition is never invented by the agent; every food, unit, gram conversion, and macro value comes from `data/foods.json`.
+
+## Reviewer Links
+
+- Frontend: `https://beet-sde-take-home-assignment.vercel.app/`
+- Backend: `https://beet-backend.onrender.com`
+- Backend health check: `https://beet-backend.onrender.com/health`
+- Backend foods API: `https://beet-backend.onrender.com/api/foods`
+- LiveKit Cloud agent: `beet-meal-agent`
+- LiveKit project subdomain: `beethealth-xyxg7jwd`
+- LiveKit agent id: `CA_ctHWwhUdrUe3`
 
 ## Architecture
 
-- `backend/` - Express, MongoDB/Mongoose, food resolver, meal APIs, tests
-- `frontend/` - Vite + React single page with a LiveKit browser microphone session and polling meal history
-- `agent/` - LiveKit Agents Node.js worker using LiveKit Inference and backend-backed tools
-- `data/foods.json` - closed food database used for all nutrition data
+- `frontend/` - Vite + React app. It starts a LiveKit browser microphone session and polls the meal API.
+- `backend/` - Express API with MongoDB/Mongoose persistence, food validation, macro calculation, and LiveKit token creation.
+- `agent/` - LiveKit Agents Node.js worker. It listens to the user, extracts intent, and calls backend-backed tools.
+- `data/foods.json` - closed food database with 30 supported foods.
 
-The agent does not calculate nutrition. It extracts intent from speech and calls API tools. The backend validates dishes and units against `foods.json`, computes grams and macros, and persists resolved snapshots in MongoDB.
+Runtime flow:
+
+1. The user opens the frontend and clicks `Start voice`.
+2. The frontend calls `POST /api/livekit/session`.
+3. The backend creates a short-lived LiveKit room token and dispatches `beet-meal-agent`.
+4. The agent hears the user's meal request and calls a backend tool.
+5. The backend validates the food against `foods.json`, computes macros, and persists the meal in MongoDB.
+6. The frontend polls `GET /api/meals` and shows the latest active entries.
+
+## Deployment
+
+The project is deployed as three separate surfaces:
+
+- Frontend: static React build, hosted separately from the API.
+- Backend: Node/Express service connected to MongoDB Atlas or another MongoDB instance.
+- Agent: LiveKit Cloud Node.js agent worker.
+
+Frontend environment:
+
+```env
+VITE_API_BASE_URL=https://beet-backend.onrender.com
+VITE_DEMO_USER_ID=venugopal
+```
+
+Backend environment:
+
+```env
+MONGO_URI=mongodb+srv://...
+CORS_ORIGIN=https://beet-sde-take-home-assignment.vercel.app
+DEMO_USER_ID=venugopal
+NODE_ENV=production
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+LIVEKIT_AGENT_NAME=beet-meal-agent
+```
+
+Agent environment:
+
+```env
+BEET_API_BASE_URL=https://beet-backend.onrender.com
+BEET_USER_ID=venugopal
+```
+
+LiveKit Cloud injects its own LiveKit credentials for the deployed agent. The agent deployment config is in `agent/livekit.toml`.
+
+Deploy agent:
+
+```bash
+cd agent
+lk agent deploy .
+```
+
+## CI/CD
+
+GitHub Actions workflows are included in `.github/workflows`.
+
+`ci.yml` runs on every pull request and every push to `main`:
+
+- Backend: installs dependencies and runs `npm test`.
+- Agent: installs dependencies and runs `npm test`.
+- Frontend: installs dependencies and runs `npm run build`.
+
+`deploy.yml` runs after CI succeeds on `main`, and can also be started manually from the GitHub Actions tab:
+
+- Frontend deploy: builds `frontend/` and deploys to Vercel when Vercel secrets are present.
+- Backend deploy: triggers a hosting-provider deploy hook, such as Render/Railway/Fly, when `BACKEND_DEPLOY_HOOK_URL` is present.
+- Agent deploy: deploys `agent/` to LiveKit Cloud using the official `livekit/deploy-action@v2`.
+
+Required GitHub secrets for deployment:
+
+```text
+VITE_API_BASE_URL=https://beet-backend.onrender.com
+VERCEL_TOKEN=...
+VERCEL_ORG_ID=...
+VERCEL_PROJECT_ID=...
+BACKEND_DEPLOY_HOOK_URL=https://your-backend-provider-deploy-hook
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+LIVEKIT_SECRET_LIST=BEET_API_BASE_URL=https://beet-backend.onrender.com,BEET_USER_ID=venugopal
+```
+
+If a deploy secret is missing, that deploy job prints a skip message instead of failing. This lets CI run cleanly before all production credentials are connected.
+
+## How Logging Works
+
+For a new meal, the user says something like:
+
+```text
+I had two rotis and one katori of dal for lunch.
+```
+
+The agent calls `log_meal` with structured items:
+
+```json
+{
+  "mealType": "lunch",
+  "rawUtterance": "I had two rotis and one katori of dal for lunch.",
+  "items": [
+    { "dish": "roti", "quantity": 2 },
+    { "dish": "dal", "quantity": 1, "unit": "katori" }
+  ]
+}
+```
+
+The backend resolves `roti` and `dal` against the closed food database, applies default units when needed, calculates grams and macros, and stores a resolved snapshot.
+
+Meal type is mandatory in the conversation. If the user says:
+
+```text
+I had dal.
+```
+
+The agent asks:
+
+```text
+Which meal was that - breakfast, lunch, dinner, or snack?
+```
+
+The agent does not infer meal type from the current time. `unknown` is used only if the user explicitly says they are not sure or declines to specify.
+
+## Logging Design
+
+Meals are stored as an event log: one document per logging event, not one merged document per meal type per day.
+
+Example:
+
+```text
+1:15 PM - one roti for lunch
+1:45 PM - two rotis for lunch
+```
+
+These stay as two lunch entries. This is intentional because real users often remember food in pieces: they log part of lunch, then add another item or second serving later.
+
+Why this design:
+
+- It preserves what the user actually said and when they said it.
+- It avoids complex merge rules like "is this a new roti or an edit to the old roti?"
+- It keeps undo simple because the latest logging event can be removed.
+- It makes audit/history behavior clearer.
+- It still supports precise edit/delete through meal type, time of day, and clock-time clarification.
+
+The backend also deduplicates identical voice retry creates inside a short 10-second window, so accidental repeated tool calls do not create duplicate logs.
+
+## How Edit Works
+
+Immediate corrections target the latest matching item:
+
+```text
+I had two rotis for lunch.
+Actually make that three rotis.
+```
+
+The agent calls `edit_meal_item` with `allow_latest_match=true`, so the most recent roti is updated instead of creating a new meal.
+
+Generic edits ask for clarification if there are multiple matches:
+
+```text
+I had one roti for lunch.
+I had two rotis for dinner.
+Change roti to three.
+```
+
+The backend returns multiple candidates, and the agent asks which one to edit using meal type and timestamp:
+
+```text
+I found multiple matching entries: 1 piece Roti from lunch at 19 Jul 2026, 1:15 PM; 2 piece Roti from dinner at 19 Jul 2026, 8:20 PM. Please tell me which one to change or remove.
+```
+
+If there are multiple lunch rotis on the same day, the timestamp is the tie-breaker:
+
+```text
+Change roti to three.
+The 1:45 one.
+```
+
+The agent calls the edit tool again with `clock_time`, and the backend edits the matching timestamped entry.
+
+## How Remove Works
+
+Immediate remove/undo commands use the latest entry:
+
+```text
+I had one katori dal for lunch.
+Remove the dal I just added.
+```
+
+Generic remove commands ask for clarification when needed:
+
+```text
+I had chai for breakfast.
+I had chai as snack.
+Remove chai.
+```
+
+The agent asks whether to remove the breakfast chai or snack chai. If the user replies with the meal type or timestamp, the agent passes those filters to `delete_meal_item`.
+
+If deleting the item leaves a meal with no items, the backend soft-deletes the whole meal. Soft delete keeps an audit trail while hiding the entry from active logs.
+
+## Supported Foods
+
+The closed food database contains these 30 foods:
+
+1. Roti
+2. Dal Tadka
+3. Cooked Rice
+4. Paneer Bhurji
+5. Rajma
+6. Chole
+7. Idli
+8. Dosa
+9. Poha
+10. Upma
+11. Chai
+12. Curd
+13. Banana
+14. Apple
+15. Boiled Egg
+16. Omelette
+17. Chicken Curry
+18. Fish Curry
+19. Sambar
+20. Paratha
+21. Aloo Sabzi
+22. Mixed Veg
+23. Khichdi
+24. Sprouts
+25. Salad
+26. Lassi
+27. Milk
+28. Oats
+29. Biryani
+30. Pulao
+
+Unsupported foods fail closed with suggestions. For example, "I had pizza for dinner" is rejected because pizza is not in `foods.json`.
+
+## API Shape
+
+- `GET /health` - backend health check
+- `GET /api/foods` - list supported foods
+- `GET /api/meals` - list active meal logs
+- `GET /api/meals/find?dish=roti&mealType=lunch&clockTime=13:45` - find a matching item for edit/delete
+- `POST /api/livekit/session` - create a LiveKit room token and dispatch the agent
+- `POST /api/meals` - create a meal log
+- `PATCH /api/meals/:mealId/items/:itemId` - edit a logged item
+- `DELETE /api/meals/:mealId/items/:itemId` - delete a logged item
+- `DELETE /api/meals/:mealId` - soft-delete a whole meal
+
+## Manual Test Scenarios
+
+Use these in a LiveKit voice session:
+
+1. "I had two rotis for lunch." Expected: logs lunch.
+2. "I had dal." Expected: asks which meal type.
+3. "I had one katori of dal and two rotis for dinner." Expected: logs both items.
+4. "Actually make that three rotis." Expected: edits the latest roti.
+5. "I had one roti for lunch." Then "I had two rotis for lunch." Then "Change roti to three." Expected: asks which lunch roti by timestamp.
+6. Reply "the 1:45 one." Expected: edits the timestamped entry.
+7. "Remove chai." after multiple chai entries. Expected: asks which one.
+8. "Remove the dal I just added." Expected: removes the latest dal.
+9. "I had pizza for dinner." Expected: rejects unsupported food.
 
 ## Run Locally
 
-Start MongoDB first. If you do not already have MongoDB running locally:
+Start MongoDB:
 
 ```bash
 docker compose up -d
@@ -26,15 +299,6 @@ cd backend
 cp .env.example .env
 npm install
 npm run dev
-```
-
-Add your LiveKit Cloud credentials to `backend/.env` so the browser can request short-lived room tokens:
-
-```env
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your-livekit-api-key
-LIVEKIT_API_SECRET=your-livekit-api-secret
-LIVEKIT_AGENT_NAME=beet-meal-agent
 ```
 
 Frontend:
@@ -55,155 +319,34 @@ npm install
 npm run dev
 ```
 
-With the LiveKit CLI installed, you can also run the same agent in development mode with:
-
-```bash
-cd agent
-lk agent dev
-```
-
-The backend expects MongoDB at `MONGO_URI` and LiveKit credentials for issuing browser session tokens. The agent also expects LiveKit Cloud credentials in `agent/.env`; speech-to-text, the LLM, and text-to-speech run through LiveKit Inference, so no separate OpenAI or Deepgram keys are required.
-
-Open the frontend at:
+Open:
 
 ```text
 http://localhost:5173
 ```
 
-Click "Start voice" on the page, allow microphone access, and speak to the assistant. The backend creates a LiveKit room token and explicitly dispatches `beet-meal-agent` into that room.
-
-## API Shape
-
-The agent uses these backend endpoints:
-
-- `GET /api/foods` - list the closed food database
-- `GET /api/meals` - list active meal logs
-- `GET /api/meals/find?dish=chai&mealType=breakfast&timeOfDay=morning` - find the most recent matching item
-- `POST /api/livekit/session` - create a browser LiveKit room token and dispatch the meal agent
-- `POST /api/meals` - log a new meal
-- `PATCH /api/meals/:mealId/items/:itemId` - edit a logged item
-- `DELETE /api/meals/:mealId/items/:itemId` - delete one item, or soft-delete the meal if it was the last item
-- `DELETE /api/meals/:mealId` - soft-delete a whole meal
-
-Example log request:
-
-```json
-{
-  "mealType": "lunch",
-  "rawUtterance": "I had two rotis and a katori of dal for lunch.",
-  "items": [
-    { "dish": "roti", "quantity": 2 },
-    { "dish": "dal", "quantity": 1, "unit": "katori" }
-  ]
-}
-```
-
-## Manual Voice Test Script
-
-Use these utterances in a LiveKit session and watch the React page update:
-
-1. "I had two rotis and a katori of dal for lunch."
-2. "Actually make that three rotis."
-3. "Remove the dal from lunch."
-4. "I had pizza." The assistant should reject it because pizza is not in `foods.json`.
-5. "Remove the chai I logged this morning." If there is no matching chai entry, the assistant should say it could not find one.
-
-## Test
+## Tests
 
 ```bash
-cd backend && npm test
-cd agent && npm test
-```
+cd backend
+npm test
 
-Backend tests use an in-memory repository, so they do not need a running MongoDB. They cover food/unit validation, macro calculation, create/list/edit/delete API flows, duplicate voice-retry protection, ambiguous match handling, missing entries, and malformed Mongo-style IDs.
-
-Agent tool tests mock HTTP calls and do not need a LiveKit room. They cover backend request formatting, optional argument cleanup, unsupported-food errors, and ambiguous-match clarification text.
-
-Manual voice flows tested against LiveKit:
-
-1. Speak "I had two rotis and a katori of dal for lunch." The page should show one lunch log with both items and resolved macros.
-2. Speak "Actually make that three rotis." The roti quantity should update instead of creating a new meal.
-3. Speak "Remove the dal from lunch." The dal item should disappear and totals should recalculate.
-4. Speak "I had pizza." The assistant should refuse it because it is outside `foods.json`.
-5. Speak "Remove the chai I logged this morning." If there is no match, the assistant should say it could not find one.
-
-For persistence, run the backend against MongoDB, log a meal, stop and restart the backend, then call `GET /api/meals` or refresh the frontend. The entry should still be present.
-
-Known test scope cuts:
-
-- The full browser microphone -> LiveKit -> agent -> backend -> frontend loop is validated manually rather than in CI, because it requires LiveKit Cloud credentials and real-time audio.
-- Multi-intent utterances are intentionally narrow: the assistant handles one operation at a time and asks before continuing, rather than trying to silently execute several mutations from one sentence.
-- This demo uses `DEMO_USER_ID=venugopal` and has no authentication. That is acceptable for the take-home demo, but a production version would add real users and authorization.
-- The frontend polls every four seconds instead of using websockets/SSE, so updates are near-real-time rather than instant.
-
-## Deployment
-
-For a reviewer-usable deployment, run the three app surfaces separately:
-
-1. Create a MongoDB Atlas cluster and use its connection string as `MONGO_URI`.
-2. Deploy `backend/` to a Node host such as Render, Railway, or Fly.io.
-3. Deploy `frontend/` to Vercel, Netlify, or another static host.
-4. Deploy `agent/` as a LiveKit Node.js agent worker.
-
-Backend environment:
-
-```env
-MONGO_URI=mongodb+srv://...
-CORS_ORIGIN=https://your-frontend-url
-DEMO_USER_ID=venugopal
-NODE_ENV=production
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your-livekit-api-key
-LIVEKIT_API_SECRET=your-livekit-api-secret
-LIVEKIT_AGENT_NAME=beet-meal-agent
-```
-
-Frontend environment:
-
-```env
-VITE_API_BASE_URL=https://your-backend-url
-```
-
-Agent environment for self-hosting:
-
-```env
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your-livekit-api-key
-LIVEKIT_API_SECRET=your-livekit-api-secret
-BEET_API_BASE_URL=https://your-backend-url
-BEET_USER_ID=venugopal
-```
-
-Agent deployment to LiveKit Cloud:
-
-```bash
 cd agent
-lk cloud auth
-lk agent create --secrets BEET_API_BASE_URL=https://your-backend-url --secrets BEET_USER_ID=venugopal
+npm test
 ```
 
-When deploying the agent to LiveKit Cloud, LiveKit injects `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` automatically. Do not bake `.env` files into the agent Docker image.
+Backend tests cover food/unit validation, macro calculation, create/list/edit/delete API flows, duplicate voice-retry protection, ambiguous match handling, exact clock-time disambiguation, missing entries, and malformed Mongo-style IDs.
 
-## Design Notes
+Agent tests cover backend request formatting, optional argument cleanup, mandatory meal-type prompting, unsupported-food errors, timestamped ambiguity messages, and text cleanup for LiveKit TTS.
 
-- `data/foods.json` is the source of truth for every supported dish, unit, gram conversion, and macro value.
-- Meals are stored as resolved snapshots. If food data changes later, old logs do not silently change.
-- Unsupported dishes fail closed with suggestions instead of being guessed.
-- Edit/delete by speech asks for clarification when multiple matching entries exist, except for immediate correction/undo commands where the assistant intentionally targets the latest match.
-- The frontend never receives the LiveKit API secret. It asks the backend for a short-lived participant token, then publishes microphone audio directly to LiveKit.
-- The voice pipeline uses LiveKit Inference model descriptors for STT, LLM, and TTS to keep local setup limited to LiveKit Cloud credentials.
-- The frontend polls every four seconds. For a production product, this would likely become a websocket or server-sent event stream.
+## Assignment Coverage
 
-## Assignment Coverage Checklist
-
-- Voice assistant: implemented with LiveKit Agents for Node.js in `agent/src`.
-- Log meal: `log_meal` tool calls `POST /api/meals`.
-- Edit entry: `edit_meal_item` finds the latest matching item and patches it.
-- Delete entry: `delete_meal_item` finds the latest matching item and deletes it.
-- Real backend: Express API in `backend/src`.
-- Persistence: MongoDB via Mongoose, with `docker-compose.yml` for local MongoDB.
-- Frontend: single React page at `frontend/src/main.jsx`.
-- Browser voice UI: frontend starts a LiveKit session and publishes microphone audio.
-- Food database constraint: backend resolver only accepts dishes and units from `data/foods.json`.
-- MERN stack: MongoDB, Express, React, Node.
-- Testing: backend unit/integration tests plus mocked agent tool tests.
+- Voice assistant with LiveKit Agents for Node.js.
+- Browser microphone flow using LiveKit.
+- Real Express backend with MongoDB persistence.
+- React frontend that shows persisted meal history.
+- Closed food database with 30 supported items.
+- Backend-owned nutrition calculation.
+- Logging, editing, removing, and undo behavior.
+- Ambiguity handling for multiple same-day meal entries.
+- Tests for backend and agent behavior.

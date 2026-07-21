@@ -1,4 +1,5 @@
 :root {
+  /* Shared brand tokens keep the single-page demo visually consistent. */
   --primary-green: #1B7A10;
   --secondary-green: #4CAF50;
   --mint: #DDF4D9;
@@ -28,6 +29,7 @@ body {
     var(--white);
 }
 
+/* Layout shell */
 main {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
@@ -48,6 +50,7 @@ main {
   box-shadow: 0 24px 70px rgba(27, 122, 16, 0.08);
 }
 
+/* Header and hero */
 .nav {
   min-height: 78px;
   display: flex;
@@ -146,6 +149,7 @@ h2 {
   line-height: 1.65;
 }
 
+/* Buttons and voice session */
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -299,6 +303,7 @@ h2 {
   background: var(--pink-bg);
 }
 
+/* Status and daily totals */
 .status {
   display: flex;
   justify-content: space-between;
@@ -348,6 +353,7 @@ h2 {
   border-color: #f5c7ea;
 }
 
+/* Meal event cards */
 .meal-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -436,6 +442,7 @@ h2 {
   line-height: 1.5;
 }
 
+/* Empty and responsive states */
 .empty {
   grid-column: 1 / -1;
   padding: 42px;

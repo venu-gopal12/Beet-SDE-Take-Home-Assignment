@@ -14,6 +14,8 @@ import { createMealsRouter } from "./routes/meals.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const defaultFoodPath = path.resolve(__dirname, "../../data/foods.json");
 
+// createApp is dependency-injected so tests can use the real routes without a
+// live MongoDB connection.
 export const createApp = ({
   repository = new MongoMealRepository(),
   foodResolver = new FoodResolver(defaultFoodPath),
@@ -23,6 +25,7 @@ export const createApp = ({
   const mealService = new MealService({ repository, foodResolver, defaultUserId });
 
   // Injected dependencies let tests hit the real routes without a live MongoDB.
+  // CORS accepts comma-separated origins in production and stays open locally.
   app.use(cors({ origin: process.env.CORS_ORIGIN?.split(",") || true }));
   app.use(express.json());
   if (process.env.NODE_ENV !== "test" && !process.env.VITEST) {

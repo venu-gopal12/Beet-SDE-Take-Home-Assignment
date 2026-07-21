@@ -4,6 +4,8 @@ import { FoodResolver } from "../src/services/FoodResolver.js";
 
 const resolver = new FoodResolver(path.resolve(process.cwd(), "../data/foods.json"));
 
+// These tests protect the food database boundary: supported foods resolve,
+// unsupported foods fail, and units/quantities stay realistic.
 describe("FoodResolver", () => {
   it("resolves aliases and default units", () => {
     const item = resolver.resolveItem({ dish: "chapati", quantity: 2 });

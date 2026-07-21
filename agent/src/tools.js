@@ -6,6 +6,8 @@ import { shouldAskForMealType } from "./mealType.js";
 const api = new BeetApiClient();
 const mutationWords = /\b(actually|make that|change it|update that|no i meant|then now|instead|undo|remove|delete|clear|take out)\b/i;
 
+// Tools are the only place the agent can mutate data. Each tool converts model
+// intent into a constrained backend API request.
 export const beetTools = [
   llm.tool({
     name: "find_foods",
@@ -15,6 +17,7 @@ export const beetTools = [
     }),
     execute: async ({ query }, { abortSignal }) => {
       try {
+        // Keep lookup read-only; the backend remains the source of truth.
         let foods = await api.foods({ signal: abortSignal });
         if (query) {
           const normalized = query.toLowerCase();
@@ -46,10 +49,12 @@ export const beetTools = [
     }),
     execute: async ({ meal_type: mealType, items_json: itemsJson, raw_utterance: rawUtterance }, { abortSignal }) => {
       try {
+        // Runtime guard against correction wording being misrouted as a new log.
         if (mutationWords.test(rawUtterance)) {
           return "That sounds like a correction or delete request, not a new meal. I will not create a new meal from that.";
         }
         if (shouldAskForMealType({ mealType, rawUtterance })) {
+          // Do not persist unknown meal type unless the user explicitly allows it.
           return "Which meal was that - breakfast, lunch, dinner, or snack?";
         }
         const items = JSON.parse(itemsJson);
@@ -76,6 +81,7 @@ export const beetTools = [
     }),
     execute: async ({ dish, quantity, unit, meal_type: mealType, time_of_day: timeOfDay, clock_time: clockTime, allow_latest_match: allowLatestMatch }, { abortSignal }) => {
       try {
+        // Generic edits keep allow_latest_match=false so ambiguity is surfaced.
         const meal = await api.editRecentItem({ dish, quantity, unit, mealType, timeOfDay, clockTime, allowAmbiguousLatest: allowLatestMatch }, { signal: abortSignal });
         return `Updated it to ${summarizeMeal(meal)}`;
       } catch (error) {
@@ -96,6 +102,7 @@ export const beetTools = [
     }),
     execute: async ({ dish, meal_type: mealType, time_of_day: timeOfDay, clock_time: clockTime, allow_latest_match: allowLatestMatch }, { abortSignal }) => {
       try {
+        // Deleting uses the same disambiguation filters as editing.
         await api.deleteRecentItem({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest: allowLatestMatch }, { signal: abortSignal });
         return `Removed the most recent ${dish} entry.`;
       } catch (error) {

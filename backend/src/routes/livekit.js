@@ -6,6 +6,8 @@ import { ApiError } from "../utils/ApiError.js";
 const defaultAgentName = "beet-meal-agent";
 
 const requiredLiveKitConfig = () => {
+  // Treat placeholder values as missing so deployed demos fail with a useful
+  // error instead of creating confusing LiveKit SDK failures.
   const { LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET } = process.env;
   const values = [LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET];
   if (!LIVEKIT_URL || !LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || values.some((value) => value.includes("your-"))) {
@@ -29,6 +31,8 @@ export const createLiveKitRouter = ({ agentName = process.env.LIVEKIT_AGENT_NAME
       const identity = `user-${randomUUID()}`;
       const userId = req.body?.userId || process.env.DEMO_USER_ID || "venugopal";
 
+      // Dispatch the cloud agent into the room before returning the browser
+      // token, so the user meets the assistant immediately after joining.
       const dispatchClient = new AgentDispatchClient(url, apiKey, apiSecret);
       await dispatchClient.createDispatch(roomName, agentName, {
         metadata: JSON.stringify({ userId }),
@@ -39,6 +43,8 @@ export const createLiveKitRouter = ({ agentName = process.env.LIVEKIT_AGENT_NAME
         name: "Beet user",
         ttl: "30m",
       });
+      // The browser only receives a short-lived participant token, never the
+      // LiveKit API secret.
       token.addGrant({
         room: roomName,
         roomJoin: true,

@@ -10,6 +10,8 @@ export const createFoodsRouter = ({ foodResolver }) => {
 
   router.get("/search", (req, res, next) => {
     try {
+      // Search uses the same resolver path as logging, so suggestions and
+      // validation behave consistently.
       const food = foodResolver.resolveFood(req.query.q);
       res.json({ food });
     } catch (error) {

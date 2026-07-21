@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+// Test repository with Mongo-like behavior but no external database dependency.
 export class InMemoryMealRepository {
   constructor() {
     this.meals = new Map();
@@ -28,6 +29,7 @@ export class InMemoryMealRepository {
   }
 
   async list(userId, { includeDeleted = false } = {}) {
+    // Keep the same newest-first contract as MongoMealRepository.
     return [...this.meals.values()]
       .filter((meal) => meal.userId === userId && (includeDeleted || !meal.deletedAt))
       .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
