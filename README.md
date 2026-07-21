@@ -36,7 +36,9 @@ The project is deployed as three separate surfaces:
 
 - Frontend: static React build, hosted separately from the API.
 - Backend: Node/Express service connected to MongoDB Atlas or another MongoDB instance.
-- Agent: LiveKit Cloud Node.js agent worker.
+- Agent: LiveKit Cloud Node.js agent worker. LiveKit Cloud builds this worker from `agent/Dockerfile` during agent deploy.
+
+Docker is not required for the Vercel frontend or Render backend deployment in this project. The root `docker-compose.yml` is only a local-development convenience for starting MongoDB, while `agent/Dockerfile` is kept because LiveKit Cloud agent deployment expects a Dockerfile-backed build.
 
 Frontend environment:
 
@@ -286,11 +288,19 @@ Use these in a LiveKit voice session:
 
 ## Run Locally
 
+Prerequisites for an empty machine:
+
+- Node.js 24 and npm.
+- MongoDB, either from Docker Compose, a local MongoDB install, or MongoDB Atlas.
+- LiveKit Cloud project credentials if you want to test the browser voice flow locally.
+
 Start MongoDB:
 
 ```bash
 docker compose up -d
 ```
+
+If you use MongoDB Atlas instead of Docker, put that connection string in `backend/.env` as `MONGO_URI`.
 
 Backend:
 
@@ -350,3 +360,13 @@ Agent tests cover backend request formatting, optional argument cleanup, mandato
 - Logging, editing, removing, and undo behavior.
 - Ambiguity handling for multiple same-day meal entries.
 - Tests for backend and agent behavior.
+
+## Incomplete or Future Improvements
+
+The core assignment flow is complete: the deployed app supports voice logging, editing, deleting, persistent storage, and frontend reflection. The main things I would improve with more time are:
+
+- Add real authentication and user accounts instead of the fixed demo user id.
+- Add frontend controls for date filtering and manual review of older logs.
+- Add browser-level end-to-end tests around the LiveKit session UI. The current automated tests focus on backend behavior and agent tool behavior.
+- Improve the edit/delete confirmation UX for very old entries, for example by showing the candidate choices directly in the frontend.
+- Expand the food database and add nutritionist-owned food-plan constraints. This submission intentionally keeps nutrition closed to the provided 30-item `foods.json`.
