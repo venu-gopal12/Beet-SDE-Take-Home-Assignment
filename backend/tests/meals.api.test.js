@@ -55,6 +55,36 @@ describe("meal API", () => {
     expect(updatedRoti.grams).toBe(120);
   });
 
+  it("adds omitted correction items to an existing meal", async () => {
+    const created = await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "breakfast",
+        rawUtterance: "one cup rice for breakfast",
+        items: [{ dish: "rice", quantity: 1, unit: "cup" }]
+      })
+      .expect(201);
+
+    const rice = created.body.meal.items.find((item) => item.foodId === "rice");
+    await request(app)
+      .patch(`/api/meals/${created.body.meal._id}/items/${rice._id}`)
+      .send({ quantity: 2, unit: "cup" })
+      .expect(200);
+
+    const appended = await request(app)
+      .post(`/api/meals/${created.body.meal._id}/items`)
+      .send({
+        rawUtterance: "actually two cups of rice and dal",
+        items: [{ dish: "dal", quantity: 1, unit: "katori" }]
+      })
+      .expect(201);
+
+    expect(appended.body.meal.items.map((item) => item.foodId)).toEqual(["rice", "dal_tadka"]);
+    expect(appended.body.meal.items.find((item) => item.foodId === "rice").quantity).toBe(2);
+    expect(appended.body.meal.rawUtterance).toBe("actually two cups of rice and dal");
+    expect(appended.body.meal.totals.calories).toBeGreaterThan(500);
+  });
+
   it("finds and deletes the most recent matching item", async () => {
     await createLunch();
     const match = await request(app).get("/api/meals/find?dish=dal&mealType=lunch").expect(200);
@@ -106,6 +136,20 @@ describe("meal API", () => {
   it("rejects missing required meal items", async () => {
     const response = await request(app).post("/api/meals").send({ mealType: "lunch" }).expect(422);
     expect(response.body.error.code).toBe("items_required");
+  });
+
+  it("rejects partial structured logs when raw speech mentions another supported food", async () => {
+    const response = await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "breakfast",
+        rawUtterance: "two cups of rice and dal",
+        items: [{ dish: "dal", quantity: 1, unit: "katori" }]
+      })
+      .expect(422);
+
+    expect(response.body.error.code).toBe("mentioned_items_missing");
+    expect(response.body.error.details.missingFoods).toEqual([{ id: "rice", name: "Cooked Rice" }]);
   });
 
   it("returns 404 for editing or deleting a missing entry", async () => {

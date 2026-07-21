@@ -91,6 +91,38 @@ export const beetTools = [
   }),
 
   llm.tool({
+    name: "add_items_to_recent_meal",
+    description: "Add omitted foods to the same recent meal as an already-mentioned anchor dish. Use after correction wording such as 'actually two cups of rice and dal' when rice should be edited and dal should join that same meal, not become a new meal entry.",
+    parameters: z.object({
+      anchor_dish: z.string().describe("Existing food in the meal to attach new items to, such as rice in 'actually two cups rice and dal'."),
+      items_json: z.string().describe("JSON array of only the new/omitted items to add, each with dish, quantity, and optional unit."),
+      raw_utterance: z.string().default("").describe("The user's original correction phrase."),
+      meal_type: z.string().nullable().default(null).describe("Optional meal type filter such as breakfast, lunch, dinner, or snack."),
+      time_of_day: z.string().nullable().default(null).describe("Optional time-of-day filter such as morning, afternoon, evening, or night."),
+      clock_time: z.string().nullable().default(null).describe("Optional exact clock-time filter from a user clarification, such as 1:45 PM or 13:45."),
+      allow_latest_match: z.boolean().default(false).describe("Use true for immediate corrections so the latest matching meal is selected."),
+    }),
+    execute: async ({ anchor_dish: anchorDish, items_json: itemsJson, raw_utterance: rawUtterance, meal_type: mealType, time_of_day: timeOfDay, clock_time: clockTime, allow_latest_match: allowLatestMatch }, { abortSignal }) => {
+      try {
+        const items = JSON.parse(itemsJson);
+        const meal = await api.addItemsToRecentMeal({
+          anchorDish,
+          items,
+          rawUtterance,
+          mealType,
+          timeOfDay,
+          clockTime,
+          allowAmbiguousLatest: allowLatestMatch,
+        }, { signal: abortSignal });
+        return `Added that to the same meal: ${summarizeMeal(meal)}`;
+      } catch (error) {
+        if (error instanceof BeetApiError) return formatApiError(error);
+        return "I could not read those extra meal items.";
+      }
+    },
+  }),
+
+  llm.tool({
     name: "delete_meal_item",
     description: "Delete the most recent matching food item.",
     parameters: z.object({

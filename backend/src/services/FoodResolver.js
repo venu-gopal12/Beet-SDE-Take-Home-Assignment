@@ -63,6 +63,20 @@ export class FoodResolver {
     }));
   }
 
+  findMentionedFoods(input) {
+    const text = ` ${normalize(input)} `;
+    const mentioned = new Map();
+
+    for (const entry of this.searchEntries) {
+      if (!entry.normalizedAlias) continue;
+      if (text.includes(` ${entry.normalizedAlias} `)) {
+        mentioned.set(entry.food.id, entry.food);
+      }
+    }
+
+    return [...mentioned.values()];
+  }
+
   resolveFood(input) {
     const requested = normalize(input);
     if (!requested) {

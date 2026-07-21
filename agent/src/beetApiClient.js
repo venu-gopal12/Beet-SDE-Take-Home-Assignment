@@ -113,6 +113,32 @@ export class BeetApiClient {
     return payload.meal;
   }
 
+  async addItemsToRecentMeal({ anchorDish, items, rawUtterance = "", mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options = {}) {
+    const match = await this.findRecent({
+      dish: anchorDish,
+      mealType,
+      timeOfDay,
+      clockTime,
+      allowAmbiguousLatest,
+    }, options);
+    if (!match) {
+      throw new BeetApiError(
+        `I could not find a recent ${anchorDish} entry to add those items to.`,
+        "meal_match_not_found",
+      );
+    }
+
+    const payload = await this.request("POST", `/api/meals/${match.mealId}/items`, {
+      ...options,
+      json: {
+        userId: this.userId,
+        items,
+        rawUtterance,
+      },
+    });
+    return payload.meal;
+  }
+
   async deleteRecentItem({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options = {}) {
     const match = await this.findRecent({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options);
     if (!match) {
@@ -182,6 +208,11 @@ export const formatApiError = (error) => {
   }
   if (error.code === "meal_match_not_found") {
     return error.message;
+  }
+  const missingFoods = error.details?.missingFoods || [];
+  if (error.code === "mentioned_items_missing" && missingFoods.length) {
+    const names = missingFoods.map((food) => food.name).join(", ");
+    return `I heard ${names} too, so I will not create a partial new meal entry. I need to update the existing meal instead.`;
   }
   return error.message;
 };

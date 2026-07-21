@@ -103,6 +103,18 @@ export class MealService {
     const normalizedMealType = normalizeMealType(mealType);
     const loggedAtDate = asDate(loggedAt);
     const rawText = rawUtterance || "";
+    if (rawText.trim()) {
+      const resolvedFoodIds = new Set(resolvedItems.map((item) => item.foodId));
+      const missingFoods = this.foodResolver
+        .findMentionedFoods(rawText)
+        .filter((food) => !resolvedFoodIds.has(food.id));
+
+      if (missingFoods.length) {
+        throw new ApiError(422, "mentioned_items_missing", "The meal log is missing foods mentioned by the user.", {
+          missingFoods: missingFoods.map((food) => ({ id: food.id, name: food.name }))
+        });
+      }
+    }
     const fingerprint = mealFingerprint({
       mealType: normalizedMealType,
       rawUtterance: rawText,
@@ -149,6 +161,19 @@ export class MealService {
 
     meal.items[itemIndex] = { ...current, ...next };
     meal.totals = sumMacros(meal.items);
+    return this.repository.save(meal);
+  }
+
+  async addItems({ mealId, userId, items, rawUtterance }) {
+    const meal = await this.getActiveMeal(mealId, userId);
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ApiError(422, "items_required", "At least one meal item is required.");
+    }
+
+    const resolvedItems = items.map((item) => this.foodResolver.resolveItem(item));
+    meal.items = [...meal.items, ...resolvedItems];
+    meal.totals = sumMacros(meal.items);
+    if (rawUtterance !== undefined) meal.rawUtterance = rawUtterance;
     return this.repository.save(meal);
   }
 

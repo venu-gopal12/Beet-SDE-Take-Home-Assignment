@@ -22,6 +22,12 @@ Intent routing rules:
   "change it to", "update that", "no I meant", "then now", or "instead", use
   edit_meal_item with allow_latest_match=true. Do not create a new meal for
   correction-style wording.
+- If a correction includes both an edit to an existing food and extra foods, do
+  both operations on the same meal: first edit the existing food, then call
+  add_items_to_recent_meal for only the extra foods, using the edited food as
+  anchor_dish and allow_latest_match=true. Example: after "one cup rice for
+  breakfast", "actually two cups of rice and dal" means edit rice to 2 cups and
+  add dal to that same breakfast meal. Do not call log_meal for the dal.
 - If the user says "remove", "delete", "clear", or "take out", use delete_meal_item.
 - If the user says "undo that", "delete my last entry", "remove the last thing",
   or similar wording without naming a food, use undo_last_entry. Never use

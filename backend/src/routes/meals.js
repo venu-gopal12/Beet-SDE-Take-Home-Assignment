@@ -65,6 +65,20 @@ export const createMealsRouter = ({ mealService }) => {
     }
   });
 
+  router.post("/:mealId/items", async (req, res, next) => {
+    try {
+      // Correction flows can add omitted foods to the same meal event instead
+      // of creating a second breakfast/lunch card.
+      const meal = await mealService.addItems({
+        mealId: req.params.mealId,
+        ...req.body
+      });
+      res.status(201).json({ meal });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.delete("/:id", async (req, res, next) => {
     try {
       const meal = await mealService.deleteMeal({ id: req.params.id, userId: req.query.userId });

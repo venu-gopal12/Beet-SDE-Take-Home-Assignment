@@ -103,6 +103,51 @@ describe("BeetApiClient", () => {
     fetchMock.mock.restore();
   });
 
+  it("adds correction items to the recent matching meal", async () => {
+    const fetchMock = mock.method(globalThis, "fetch", async (url, init) => {
+      const parsed = new URL(url);
+      if (parsed.pathname === "/api/meals/find") {
+        assert.equal(parsed.searchParams.get("dish"), "rice");
+        assert.equal(parsed.searchParams.get("mealType"), "breakfast");
+        assert.equal(parsed.searchParams.get("allowAmbiguousLatest"), "true");
+        return new Response(JSON.stringify({ match: { mealId: "m1", itemId: "rice-item" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+
+      assert.equal(parsed.pathname, "/api/meals/m1/items");
+      const body = JSON.parse(init.body);
+      assert.equal(body.userId, "demo-user");
+      assert.equal(body.rawUtterance, "actually two cups of rice and dal");
+      assert.deepEqual(body.items, [{ dish: "dal", quantity: 1, unit: "katori" }]);
+      return new Response(JSON.stringify({
+        meal: {
+          _id: "m1",
+          items: [
+            { foodName: "Cooked Rice", quantity: 2, unit: "cup" },
+            { foodName: "Dal Tadka", quantity: 1, unit: "katori" },
+          ],
+          totals: { calories: 603.2, protein: 19.4, carbs: 115.7, fat: 6 },
+        },
+      }), { status: 201, headers: { "content-type": "application/json" } });
+    });
+
+    const client = new BeetApiClient({ baseUrl: "http://test", userId: "demo-user" });
+    const meal = await client.addItemsToRecentMeal({
+      anchorDish: "rice",
+      mealType: "breakfast",
+      allowAmbiguousLatest: true,
+      rawUtterance: "actually two cups of rice and dal",
+      items: [{ dish: "dal", quantity: 1, unit: "katori" }],
+    });
+
+    assert.equal(fetchMock.mock.calls.length, 2);
+    assert.equal(meal.items.length, 2);
+    assert.match(summarizeMeal(meal), /Dal Tadka/);
+    fetchMock.mock.restore();
+  });
+
   it("surfaces backend suggestions", async () => {
     const fetchMock = mock.method(globalThis, "fetch", async () => new Response(JSON.stringify({
       error: {
@@ -133,6 +178,16 @@ describe("BeetApiClient", () => {
     assert.match(message, /lunch/);
     assert.match(message, /dinner/);
     assert.match(message, /at .*2026/i);
+  });
+
+  it("formats partial log rejections as correction guidance", () => {
+    const error = new BeetApiError("Missing mentioned foods.", "mentioned_items_missing", {
+      missingFoods: [{ id: "rice", name: "Cooked Rice" }],
+    });
+
+    const message = formatApiError(error);
+    assert.match(message, /Cooked Rice/);
+    assert.match(message, /partial new meal entry/);
   });
 
   it("deletes the latest meal entry for undo", async () => {

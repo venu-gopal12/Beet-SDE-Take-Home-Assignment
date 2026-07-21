@@ -268,6 +268,7 @@ Unsupported foods fail closed with suggestions. For example, "I had pizza for di
 - `GET /api/meals/find?dish=roti&mealType=lunch&clockTime=13:45` - find a matching item for edit/delete
 - `POST /api/livekit/session` - create a LiveKit room token and dispatch the agent
 - `POST /api/meals` - create a meal log
+- `POST /api/meals/:mealId/items` - add omitted correction items to an existing meal log
 - `PATCH /api/meals/:mealId/items/:itemId` - edit a logged item
 - `DELETE /api/meals/:mealId/items/:itemId` - delete a logged item
 - `DELETE /api/meals/:mealId` - soft-delete a whole meal
@@ -285,6 +286,7 @@ Use these in a LiveKit voice session:
 7. "Remove chai." after multiple chai entries. Expected: asks which one.
 8. "Remove the dal I just added." Expected: removes the latest dal.
 9. "I had pizza for dinner." Expected: rejects unsupported food.
+10. "I had one cup of rice for breakfast." Then "Actually two cups of rice and dal." Expected: updates rice to two cups and adds dal to the same breakfast entry, not a second entry.
 
 ## Run Locally
 
