@@ -41,6 +41,40 @@ const inTimeOfDay = (meal, timeOfDay) => {
   return true;
 };
 
+const parseClockTime = (clockTime) => {
+  if (!clockTime) return null;
+  const match = String(clockTime).trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+  if (!match) {
+    throw new ApiError(422, "clock_time_invalid", "clockTime must look like 1:45 PM or 13:45.");
+  }
+
+  let hour = Number(match[1]);
+  const minute = match[2] === undefined ? 0 : Number(match[2]);
+  const period = match[3];
+
+  if (minute < 0 || minute > 59) {
+    throw new ApiError(422, "clock_time_invalid", "clockTime must look like 1:45 PM or 13:45.");
+  }
+  if (period) {
+    if (hour < 1 || hour > 12) {
+      throw new ApiError(422, "clock_time_invalid", "clockTime must look like 1:45 PM or 13:45.");
+    }
+    if (period === "pm" && hour !== 12) hour += 12;
+    if (period === "am" && hour === 12) hour = 0;
+  } else if (hour < 0 || hour > 23) {
+    throw new ApiError(422, "clock_time_invalid", "clockTime must look like 1:45 PM or 13:45.");
+  }
+
+  return { hour, minute };
+};
+
+const atClockTime = (meal, parsedClockTime) => {
+  if (!parsedClockTime) return true;
+  const loggedAt = new Date(meal.loggedAt);
+  return loggedAt.getHours() === parsedClockTime.hour
+    && loggedAt.getMinutes() === parsedClockTime.minute;
+};
+
 export class MealService {
   constructor({ repository, foodResolver, defaultUserId = "demo-user" }) {
     this.repository = repository;
@@ -137,15 +171,17 @@ export class MealService {
     return this.repository.save(meal);
   }
 
-  async findRecent({ userId, dish, mealType, timeOfDay, allowAmbiguousLatest = true }) {
+  async findRecent({ userId, dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest = true }) {
     const food = dish ? this.foodResolver.resolveFood(dish) : null;
     const meals = await this.repository.list(this.userId(userId));
+    const parsedClockTime = parseClockTime(clockTime);
     const matches = [];
 
     // Repositories return newest-first, so the first match means "the latest one".
     for (const meal of meals) {
       if (mealType && meal.mealType !== normalizeMealType(mealType)) continue;
       if (!inTimeOfDay(meal, timeOfDay)) continue;
+      if (!atClockTime(meal, parsedClockTime)) continue;
       const item = food
         ? meal.items.find((candidate) => candidate.foodId === food.id)
         : meal.items[0];

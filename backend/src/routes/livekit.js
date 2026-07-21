@@ -27,7 +27,7 @@ export const createLiveKitRouter = ({ agentName = process.env.LIVEKIT_AGENT_NAME
       const { url, apiKey, apiSecret } = requiredLiveKitConfig();
       const roomName = `beet-${randomUUID()}`;
       const identity = `user-${randomUUID()}`;
-      const userId = req.body?.userId || process.env.DEMO_USER_ID || "demo-user";
+      const userId = req.body?.userId || process.env.DEMO_USER_ID || "venugopal";
 
       const dispatchClient = new AgentDispatchClient(url, apiKey, apiSecret);
       await dispatchClient.createDispatch(roomName, agentName, {

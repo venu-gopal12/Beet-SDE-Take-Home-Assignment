@@ -133,7 +133,7 @@ Known test scope cuts:
 
 - The full browser microphone -> LiveKit -> agent -> backend -> frontend loop is validated manually rather than in CI, because it requires LiveKit Cloud credentials and real-time audio.
 - Multi-intent utterances are intentionally narrow: the assistant handles one operation at a time and asks before continuing, rather than trying to silently execute several mutations from one sentence.
-- This demo uses `DEMO_USER_ID=demo-user` and has no authentication. That is acceptable for the take-home demo, but a production version would add real users and authorization.
+- This demo uses `DEMO_USER_ID=venugopal` and has no authentication. That is acceptable for the take-home demo, but a production version would add real users and authorization.
 - The frontend polls every four seconds instead of using websockets/SSE, so updates are near-real-time rather than instant.
 
 ## Deployment
@@ -150,7 +150,7 @@ Backend environment:
 ```env
 MONGO_URI=mongodb+srv://...
 CORS_ORIGIN=https://your-frontend-url
-DEMO_USER_ID=demo-user
+DEMO_USER_ID=venugopal
 NODE_ENV=production
 LIVEKIT_URL=wss://your-project.livekit.cloud
 LIVEKIT_API_KEY=your-livekit-api-key
@@ -171,7 +171,7 @@ LIVEKIT_URL=wss://your-project.livekit.cloud
 LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-livekit-api-secret
 BEET_API_BASE_URL=https://your-backend-url
-BEET_USER_ID=demo-user
+BEET_USER_ID=venugopal
 ```
 
 Agent deployment to LiveKit Cloud:
@@ -179,7 +179,7 @@ Agent deployment to LiveKit Cloud:
 ```bash
 cd agent
 lk cloud auth
-lk agent create --secrets BEET_API_BASE_URL=https://your-backend-url --secrets BEET_USER_ID=demo-user
+lk agent create --secrets BEET_API_BASE_URL=https://your-backend-url --secrets BEET_USER_ID=venugopal
 ```
 
 When deploying the agent to LiveKit Cloud, LiveKit injects `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` automatically. Do not bake `.env` files into the agent Docker image.

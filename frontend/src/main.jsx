@@ -5,6 +5,7 @@ import { Room, RoomEvent, Track } from "livekit-client";
 import "./styles.css";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const demoUserId = import.meta.env.VITE_DEMO_USER_ID || "venugopal";
 
 const formatTime = (value) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -42,7 +43,7 @@ const VoiceSession = ({ onMealsChanged }) => {
       const response = await fetch(`${apiBaseUrl}/api/livekit/session`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ userId: "demo-user" })
+        body: JSON.stringify({ userId: demoUserId })
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));

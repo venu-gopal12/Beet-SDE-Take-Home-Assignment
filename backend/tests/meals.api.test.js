@@ -152,6 +152,43 @@ describe("meal API", () => {
     await request(app).get("/api/meals/find?dish=roti&allowAmbiguousLatest=true").expect(200);
   });
 
+  it("uses exact clock time to disambiguate same-meal entries", async () => {
+    const earlyLunchAt = new Date(2026, 6, 19, 13, 15).toISOString();
+    const laterLunchAt = new Date(2026, 6, 19, 13, 45).toISOString();
+
+    await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "lunch",
+        rawUtterance: "one roti for lunch",
+        loggedAt: earlyLunchAt,
+        items: [{ dish: "roti", quantity: 1 }]
+      })
+      .expect(201);
+
+    await request(app)
+      .post("/api/meals")
+      .send({
+        mealType: "lunch",
+        rawUtterance: "two rotis for lunch",
+        loggedAt: laterLunchAt,
+        items: [{ dish: "roti", quantity: 2 }]
+      })
+      .expect(201);
+
+    await request(app)
+      .get("/api/meals/find")
+      .query({ dish: "roti", mealType: "lunch" })
+      .expect(409);
+
+    const match = await request(app)
+      .get("/api/meals/find")
+      .query({ dish: "roti", mealType: "lunch", clockTime: "13:45" })
+      .expect(200);
+
+    expect(match.body.match.item.quantity).toBe(2);
+  });
+
   it("maps malformed Mongo ids to a clear 400 response", async () => {
     const castErrorRepository = {
       getById: async () => {

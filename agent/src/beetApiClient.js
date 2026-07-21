@@ -19,7 +19,7 @@ export const cleanOptional = (value) => {
 };
 
 export class BeetApiClient {
-  constructor({ baseUrl = process.env.BEET_API_BASE_URL || "http://localhost:4000", userId = process.env.BEET_USER_ID || "demo-user" } = {}) {
+  constructor({ baseUrl = process.env.BEET_API_BASE_URL || "http://localhost:4000", userId = process.env.BEET_USER_ID || "venugopal" } = {}) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.userId = userId;
   }
@@ -71,9 +71,10 @@ export class BeetApiClient {
     return payload.meal;
   }
 
-  async findRecent({ dish, mealType, timeOfDay, allowAmbiguousLatest = false }, options = {}) {
+  async findRecent({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest = false }, options = {}) {
     const cleanMealType = cleanOptional(mealType);
     const cleanTimeOfDay = cleanOptional(timeOfDay);
+    const cleanClockTime = cleanOptional(clockTime);
     const payload = await this.request("GET", "/api/meals/find", {
       ...options,
       params: {
@@ -81,14 +82,21 @@ export class BeetApiClient {
         dish,
         mealType: cleanMealType,
         timeOfDay: cleanTimeOfDay,
+        clockTime: cleanClockTime,
         allowAmbiguousLatest,
       },
     });
     return payload.match;
   }
 
-  async editRecentItem({ dish, quantity, unit, mealType, timeOfDay, allowAmbiguousLatest }, options = {}) {
-    const match = await this.findRecent({ dish, mealType, timeOfDay, allowAmbiguousLatest }, options);
+  async editRecentItem({ dish, quantity, unit, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options = {}) {
+    const match = await this.findRecent({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options);
+    if (!match) {
+      throw new BeetApiError(
+        `I could not find a recent ${dish} entry to update.`,
+        "meal_match_not_found",
+      );
+    }
     const cleanUnit = cleanOptional(unit);
     const body = { userId: this.userId };
     if (quantity !== null && quantity !== undefined) body.quantity = quantity;
@@ -101,8 +109,14 @@ export class BeetApiClient {
     return payload.meal;
   }
 
-  async deleteRecentItem({ dish, mealType, timeOfDay, allowAmbiguousLatest }, options = {}) {
-    const match = await this.findRecent({ dish, mealType, timeOfDay, allowAmbiguousLatest }, options);
+  async deleteRecentItem({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options = {}) {
+    const match = await this.findRecent({ dish, mealType, timeOfDay, clockTime, allowAmbiguousLatest }, options);
+    if (!match) {
+      throw new BeetApiError(
+        `I could not find a recent ${dish} entry to remove.`,
+        "meal_match_not_found",
+      );
+    }
     const payload = await this.request("DELETE", `/api/meals/${match.mealId}/items/${match.itemId}`, {
       ...options,
       params: { userId: this.userId },
@@ -136,6 +150,16 @@ export const summarizeMeal = (meal) => {
   return `${items}. Total: ${totals.calories || 0} calories, ${totals.protein || 0}g protein, ${totals.carbs || 0}g carbs, ${totals.fat || 0}g fat.`;
 };
 
+const formatLoggedAt = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return ` at ${new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)}`;
+};
+
 export const formatApiError = (error) => {
   const suggestions = error.details?.suggestions || [];
   if (suggestions.length) {
@@ -145,9 +169,12 @@ export const formatApiError = (error) => {
   const candidates = error.details?.candidates || [];
   if (error.code === "meal_match_ambiguous" && candidates.length) {
     const labels = candidates
-      .map((candidate) => `${candidate.item.quantity} ${candidate.item.unit} ${candidate.item.foodName} from ${candidate.mealType}`)
+      .map((candidate) => `${candidate.item.quantity} ${candidate.item.unit} ${candidate.item.foodName} from ${candidate.mealType}${formatLoggedAt(candidate.loggedAt)}`)
       .join("; ");
     return `I found multiple matching entries: ${labels}. Please tell me which one to change or remove.`;
+  }
+  if (error.code === "meal_match_not_found") {
+    return error.message;
   }
   return error.message;
 };

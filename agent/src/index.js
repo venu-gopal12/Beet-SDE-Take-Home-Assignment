@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import { ServerOptions, cli, defineAgent, inference, voice } from "@livekit/agents";
 import { createAgent } from "./beetAgent.js";
+import { stripGemmaThoughtChannels } from "./textTransforms.js";
 
 dotenv.config({ path: ".env" });
 dotenv.config({ path: ".env.local", override: true });
@@ -20,6 +21,7 @@ export default defineAgent({
       turnHandling: {
         turnDetection: "stt",
       },
+      ttsTextTransforms: [stripGemmaThoughtChannels, "filter_markdown", "filter_emoji"],
     });
 
     await session.start({

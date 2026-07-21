@@ -20,6 +20,7 @@ export const createMealsRouter = ({ mealService }) => {
         dish: req.query.dish,
         mealType: req.query.mealType,
         timeOfDay: req.query.timeOfDay,
+        clockTime: req.query.clockTime,
         allowAmbiguousLatest: req.query.allowAmbiguousLatest === "true"
       });
       res.json({ match });

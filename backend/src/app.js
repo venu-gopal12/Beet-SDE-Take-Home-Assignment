@@ -17,7 +17,7 @@ const defaultFoodPath = path.resolve(__dirname, "../../data/foods.json");
 export const createApp = ({
   repository = new MongoMealRepository(),
   foodResolver = new FoodResolver(defaultFoodPath),
-  defaultUserId = process.env.DEMO_USER_ID || "demo-user"
+  defaultUserId = process.env.DEMO_USER_ID || "venugopal"
 } = {}) => {
   const app = express();
   const mealService = new MealService({ repository, foodResolver, defaultUserId });
