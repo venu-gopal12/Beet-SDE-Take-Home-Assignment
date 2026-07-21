@@ -17,8 +17,8 @@ const formatTime = (value) =>
     timeStyle: "short"
   }).format(new Date(value));
 
-const Macro = ({ label, value, unit = "g" }) => (
-  <div className="macro">
+const Macro = ({ label, value, unit = "g", featured = false }) => (
+  <div className={`macro${featured ? " macro-featured" : ""}`}>
     <span>{label}</span>
     <strong>{value}{unit}</strong>
   </div>
@@ -257,7 +257,7 @@ const App = () => {
       </section>
 
       <section className="summary">
-        <Macro label="Calories" value={totals.calories} unit=" kcal" />
+        <Macro label="Total calories" value={totals.calories} unit=" kcal" featured />
         <Macro label="Protein" value={totals.protein} />
         <Macro label="Carbs" value={totals.carbs} />
         <Macro label="Fat" value={totals.fat} />
